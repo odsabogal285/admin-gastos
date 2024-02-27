@@ -2,6 +2,8 @@
   import imagen from '../assets/img/grafico.jpg'
   import {formatearCantidad} from "../helpers/index.js";
 
+  defineEmits(['reset-app'])
+
   defineProps({
     presupuesto: {
       type: Number,
@@ -28,7 +30,11 @@
 
     </div>
     <div class="contenedor-presupuesto">
-      <button class="reset-app">
+      <button
+          class="reset-app"
+          type="button"
+          @click="$emit('reset-app')"
+      >
         Resetear App
       </button>
       <p>
