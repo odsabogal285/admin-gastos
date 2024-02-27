@@ -31,6 +31,14 @@
   }, {
     deep: true
   });
+
+  watch(modal, () => {
+    if(!modal.mostrar) {
+      reiniciarStateGasto();
+    }
+  }, {
+    deep: true
+  })
   const definirPresupuesto = (cantidad) => {
     presupuesto.value = cantidad;
     disponible.value = cantidad;
@@ -53,20 +61,41 @@
   }
 
   const guardarGasto = () => {
-    gastos.value.push({
-      ...gasto,
-      id: generarId(),
-    });
-
+    if (gasto.id){
+      const { id } = gasto;
+      const i = gastos.value.findIndex((gasto => gasto.id === id));
+      gastos.value[i] = {...gasto}
+    } else {
+      gastos.value.push({
+        ...gasto,
+        id: generarId(),
+      });
+    }
     ocultarModal();
-    //Reinicar el objeto
+    reiniciarStateGasto();
+  }
+
+
+  const reiniciarStateGasto = () => {
     Object.assign(gasto, {
       nombre: '',
       cantidad: '',
       categoria: '',
       id: null,
       fecha: Date.now()
-    })
+    });
+  }
+  const seleccionarGasto = (id) => {
+    const gastoEditar = gastos.value.filter(gasto => gasto.id === id)[0];
+    Object.assign(gasto, gastoEditar);
+    mostrarModal();
+  }
+
+  const eliminarGasto = () => {
+    if(confirm('Eliminar?')) {
+      gastos.value = gastos.value.filter((gastoState) => gastoState.id !== gasto.id);
+      ocultarModal();
+    }
   }
 </script>
 
@@ -96,6 +125,7 @@
           v-for="gasto in gastos"
           :key="gasto.id"
           :gasto="gasto"
+          @seleccionar-gasto="seleccionarGasto"
         />
       </div>
 
@@ -108,10 +138,12 @@
       </div>
       <Modal
         v-if="modal.mostrar"
-         @ocultar-modal="ocultarModal"
+        @ocultar-modal="ocultarModal"
         @guardar-gasto="guardarGasto"
+        @eliminar-gasto="eliminarGasto"
         :modal="modal"
         :disponible="disponible"
+        :id="gasto.id"
         v-model:nombre="gasto.nombre"
         v-model:cantidad="gasto.cantidad"
         v-model:categoria="gasto.categoria"

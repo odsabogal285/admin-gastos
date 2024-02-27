@@ -1,11 +1,11 @@
 <script setup>
-  import {ref, onMounted} from "vue";
+  import {ref, computed} from "vue";
   import cerrarModal from '../assets/img/cerrar.svg'
   import Alerta from "./Alerta.vue";
 
   const error = ref('');
 
-  const emit = defineEmits(['ocultar-modal', 'guardar-gasto','update:nombre', 'update:cantidad', 'update:categoria'])
+  const emit = defineEmits(['ocultar-modal', 'guardar-gasto','update:nombre', 'update:cantidad', 'update:categoria', 'eliminar-gasto'])
   const props = defineProps({
     modal: {
       type: Object,
@@ -26,11 +26,16 @@
     disponible: {
       type: Number,
       required: true
+    },
+    id: {
+      type: [String, null],
+      required: true
     }
-  })
+  });
 
+  const oldCantidad = props.cantidad;
   const agregarGasto = () => {
-    const { nombre, cantidad, categoria, disponible} = props;
+    const { nombre, cantidad, categoria, disponible, id} = props;
     if ([nombre, cantidad, categoria].includes('')){
       error.value = 'Todos los campos son obligatorios';
       setTimeout(() => {
@@ -47,17 +52,30 @@
       return
     }
 
-    if(cantidad > disponible) {
-      error.value = 'Haz excedido el presupuesto'
-      setTimeout(() => {
-        error.value = ''
-      }, 3000);
-      return
+    if(id) {
+      if(cantidad > (oldCantidad + disponible)){
+        error.value = 'Haz excedido el presupuesto'
+        setTimeout(() => {
+          error.value = ''
+        }, 3000);
+        return
+      }
+    } else {
+      if(cantidad > disponible) {
+        error.value = 'Haz excedido el presupuesto'
+        setTimeout(() => {
+          error.value = ''
+        }, 3000);
+        return
+      }
     }
-
     emit('guardar-gasto');
 
   }
+
+  const idEditing = computed(() => {
+    return props.id
+  });
 </script>
 
 <template>
@@ -75,7 +93,7 @@
           class="nuevo-gasto"
           @submit.prevent="agregarGasto"
       >
-        <legend>Añadir gastos</legend>
+        <legend>{{idEditing ? 'Actualizar gasto': 'Añadir gastos'}}</legend>
         <div class="campo">
           <label for="nombre">Nombre gasto: </label>
           <Alerta v-if="error">{{error}}</Alerta>
@@ -90,7 +108,7 @@
         <div class="campo">
           <label for="cantidad">Cantidad: </label>
           <input
-              type="text"
+              type="number"
               id="cantidad"
               placeholder="Añade la cantidad del Gasto, ej. 300"
               :value="cantidad"
@@ -116,9 +134,17 @@
         </div>
         <input
           type="submit"
-          value="Añadir gasto"
+          :value="[idEditing?'Actualizar gasto': 'Añadir gastos']"
         />
       </form>
+      <button
+        v-if="idEditing"
+        type="button"
+        class="btn-eliminar"
+        @click="$emit('eliminar-gasto')"
+      >
+        Eliminar gasto
+      </button>
     </div>
   </div>
 </template>
@@ -187,6 +213,17 @@
     background-color: var(--azul);
     color: var(--blanco);
     font-weight: 700;
+    cursor: pointer;
+  }
+  .btn-eliminar {
+    border: none;
+    padding: 1rem;
+    width: 100%;
+    background-color: #ef4444;
+    font-weight: 700;
+    font-size: 1.5rem;
+    color: var(--blanco);
+    margin-top: 10rem;
     cursor: pointer;
   }
 </style>
